@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumen de Horas - LogiApp GH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .card-excel { border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        .card-excel:hover { transform: translateY(-2px); shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-10">
+
+    <nav class="bg-blue-900 text-white p-4 shadow-lg">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-chart-pie text-xl text-blue-300"></i>
+                <h1 class="text-lg font-black tracking-tighter uppercase">Panel de <span class="text-blue-300">Resultados</span></h1>
+            </div>
+            <a href="index.html" class="text-[10px] bg-blue-800 px-3 py-1 rounded-full font-bold hover:bg-blue-700">
+                <i class="fas fa-arrow-left mr-1"></i> VOLVER AL REGISTRO
+            </a>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto p-4 space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Configuración del Reporte</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha Inicio</label>
+                    <input type="date" id="resIni" class="w-full p-3 bg-slate-50 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha Fin</label>
+                    <input type="date" id="resFin" class="w-full p-3 bg-slate-50 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="generarResumen()" class="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95">
+                        <i class="fas fa-sync-alt mr-2"></i> CALCULAR TOTALES
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="accionesExport" class="hidden flex flex-col md:flex-row gap-3">
+            <div class="flex-1">
+                <select id="filtroOficial" class="w-full p-3 bg-white border rounded-xl text-sm font-bold text-blue-900 shadow-sm outline-none">
+                    <option value="TODOS">-- DESCARGAR TODOS LOS OFICIALES --</option>
+                </select>
+            </div>
+            <button onclick="descargarExcel()" class="bg-green-600 text-white font-black px-6 py-3 rounded-xl hover:bg-green-700 shadow-md flex items-center justify-center">
+                <i class="fas fa-file-excel mr-2 text-lg"></i> EXPORTAR (.XLSX)
+            </button>
+        </div>
+
+        <div id="contenedorResumen" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="col-span-full text-center py-20 text-slate-400">
+                <i class="fas fa-folder-open text-4xl mb-3 block"></i>
+                <p class="text-sm font-medium">Selecciona un rango de fechas para ver el resumen.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // URL de tu Apps Script (Debe ser la misma que usas en index.html)
+        const APP_URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
+        let datosGlobales = null;
+
+        function generarResumen() {
+            const ini = document.getElementById('resIni').value;
+            const fin = document.getElementById('resFin').value;
+            
+            if(!ini || !fin) {
+                alert("Debes seleccionar ambas fechas.");
+                return;
+            }
+
+            const contenedor = document.getElementById('contenedorResumen');
+            contenedor.innerHTML = `
+                <div class="col-span-full text-center py-10">
+                    <i class="fas fa-spinner animate-spin text-3xl text-blue-600 mb-2"></i>
+                    <p class="text-xs font-bold text-slate-500 uppercase">Procesando base de datos...</p>
+                </div>
+            `;
+
+            const callbackName = 'cb_resumen';
+            window[callbackName] = function(data) {
+                datosGlobales = data;
+                renderizarTarjetas(data);
+                poblarSelectOficiales(data);
+                document.getElementById('accionesExport').classList.remove('hidden');
+                delete window[callbackName];
+            };
+
+            const script = document.createElement('script');
+            script.src = `${APP_URL}?action=getResumen&ini=${ini}&fin=${fin}&callback=${callbackName}`;
+            document.body.appendChild(script);
+        }
+
+        function renderizarTarjetas(data) {
+            const contenedor = document.getElementById('contenedorResumen');
+            let html = '';
+            
+            const oficiales = Object.keys(data);
+            
+            if(oficiales.length === 0) {
+                contenedor.innerHTML = "<div class='col-span-full text-center py-10 text-slate-500'>No se encontraron registros en estas fechas.</div>";
+                return;
+            }
+
+            oficiales.forEach(oficial => {
+                const o = data[oficial];
+                html += `
+                    <div class="bg-white p-5 rounded-2xl card-excel shadow-sm border-l-4 border-l-blue-600">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-black text-blue-900 text-sm uppercase leading-tight">${oficial}</h3>
+                            <span class="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-1 rounded-md">${o.viajes} VIAJES</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-slate-50 p-2 rounded-lg text-center">
+                                <p class="text-[8px] font-bold text-slate-400 uppercase">Total</p>
+                                <p class="text-sm font-black text-slate-800">${o.total.toFixed(2)}</p>
+                            </div>
+                            <div class="bg-blue-50 p-2 rounded-lg text-center">
+                                <p class="text-[8px] font-bold text-blue-400 uppercase">50%</p>
+                                <p class="text-sm font-black text-blue-700">${o.h50.toFixed(2)}</p>
+                            </div>
+                            <div class="bg-red-50 p-2 rounded-lg text-center">
+                                <p class="text-[8px] font-bold text-red-400 uppercase">100%</p>
+                                <p class="text-sm font-black text-red-700">${o.h100.toFixed(2)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            contenedor.innerHTML = html;
+        }
+
+        function poblarSelectOficiales(data) {
+            const select = document.getElementById('filtroOficial');
+            select.innerHTML = '<option value="TODOS">-- DESCARGAR TODOS LOS OFICIALES --</option>';
+            Object.keys(data).sort().forEach(oficial => {
+                const opt = document.createElement('option');
+                opt.value = oficial;
+                opt.innerText = oficial;
+                select.appendChild(opt);
+            });
+        }
+
+        function descargarExcel() {
+            if (!datosGlobales) return;
+
+            const oficialSeleccionado = document.getElementById('filtroOficial').value;
+            const filasExcel = [];
+            
+            // Encabezados
+            filasExcel.push(["REPORTE DE HORAS LABORADAS"]);
+            filasExcel.push(["RANGO:", document.getElementById('resIni').value, "AL", document.getElementById('resFin').value]);
+            filasExcel.push([]); // Espacio
+            filasExcel.push(["OFICIAL", "TOTAL HORAS (DECIMAL)", "HORAS 50%", "HORAS 100%", "CANTIDAD VIAJES"]);
+
+            if (oficialSeleccionado === "TODOS") {
+                Object.keys(datosGlobales).forEach(oficial => {
+                    const o = datosGlobales[oficial];
+                    filasExcel.push([oficial, o.total.toFixed(2), o.h50.toFixed(2), o.h100.toFixed(2), o.viajes]);
+                });
+            } else {
+                const o = datosGlobales[oficialSeleccionado];
+                filasExcel.push([oficialSeleccionado, o.total.toFixed(2), o.h50.toFixed(2), o.h100.toFixed(2), o.viajes]);
+            }
+
+            // Crear el libro
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(filasExcel);
+            
+            // Ajustar anchos de columna básicos
+            ws['!cols'] = [{wch:30}, {wch:15}, {wch:12}, {wch:12}, {wch:12}];
+
+            XLSX.utils.book_append_sheet(wb, ws, "Resumen");
+            
+            const nombreArchivo = `Resumen_Horas_${oficialSeleccionado.replace(/ /g, '_')}.xlsx`;
+            XLSX.writeFile(wb, nombreArchivo);
+        }
+    </script>
+</body>
+</html>
