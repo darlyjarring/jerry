@@ -170,12 +170,15 @@
             fetch(APP_URL, {
                 method: 'POST',
                 mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'text/plain' // Usamos text/plain para evitar el pre-flight de CORS
+                },
                 body: JSON.stringify(payload)
-            }).then(() => {
-                alert("✓ ¡Datos guardados en Excel!");
-                location.reload();
+                }).then(() => {
+                alert("✓ Registro enviado a la base de datos.");
+                window.location.reload();
             }).catch(err => {
-                alert("Error de red");
+                alert("Error de conexión");
                 btn.disabled = false;
             });
         });
