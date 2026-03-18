@@ -169,17 +169,17 @@
             // ENVÍO POST CON NO-CORS
             fetch(APP_URL, {
                 method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'text/plain' // Usamos text/plain para evitar el pre-flight de CORS
-                },
+                mode: 'no-cors', // ESTO EVITA EL BLOQUEO DE SEGURIDAD
+                cache: 'no-cache',
                 body: JSON.stringify(payload)
-                }).then(() => {
-                alert("✓ Registro enviado a la base de datos.");
-                window.location.reload();
-            }).catch(err => {
+            })
+            .then(() => {
+                alert("✓ ¡Datos enviados a la base de datos!");
+                location.reload();
+            })
+            .catch(err => {
+                console.error("Error:", err);
                 alert("Error de conexión");
-                btn.disabled = false;
             });
         });
     </script>
