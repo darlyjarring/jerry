@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resumen de Horas - LogiApp GH</title>
+    <title>Resumen Detallado - LogiApp GH</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -18,8 +18,8 @@
     <nav class="bg-blue-900 text-white p-4 shadow-lg">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <i class="fas fa-calculator text-xl text-blue-300"></i>
-                <h1 class="text-lg font-black tracking-tighter uppercase">Consolidado de <span class="text-blue-300">Horas Extra</span></h1>
+                <i class="fas fa-file-invoice-dollar text-xl text-blue-300"></i>
+                <h1 class="text-lg font-black tracking-tighter uppercase">Desglose <span class="text-blue-300">Horas y Valores</span></h1>
             </div>
             <a href="index.html" class="text-[10px] bg-blue-800 px-3 py-1 rounded-full font-bold hover:bg-blue-700 uppercase">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
@@ -30,10 +30,10 @@
     <div class="max-w-5xl mx-auto p-4 space-y-6">
         
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h2 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Parámetros de Conversión</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <h2 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Configuración de Reporte</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-[10px] font-bold text-blue-600 mb-1 uppercase">Sueldo/Hora Base ($)</label>
+                    <label class="block text-[10px] font-bold text-blue-600 mb-1 uppercase">Precio Hora Base ($)</label>
                     <input type="number" id="precioBase" value="2.50" step="0.01" class="w-full p-3 bg-blue-50 border border-blue-100 rounded-xl text-sm font-bold outline-none">
                 </div>
                 <div>
@@ -44,32 +44,22 @@
                     <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha Fin</label>
                     <input type="date" id="resFin" class="w-full p-3 bg-slate-50 border rounded-xl text-sm outline-none">
                 </div>
+                <div class="flex items-end">
+                    <button onclick="generarResumen()" class="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95">
+                        <i class="fas fa-sync-alt mr-2"></i> CONSULTAR
+                    </button>
+                </div>
             </div>
-            <button onclick="generarResumen()" class="w-full mt-4 bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95">
-                <i class="fas fa-sync-alt mr-2"></i> GENERAR RESUMEN TOTALIZADO
-            </button>
         </div>
 
-        <div id="accionesExport" class="hidden flex flex-col md:flex-row gap-3">
-            <div class="flex-1">
-                <select id="filtroOficial" class="w-full p-3 bg-white border rounded-xl text-sm font-bold text-blue-900 shadow-sm outline-none">
-                    <option value="TODOS">-- EXPORTAR TODOS LOS OFICIALES --</option>
-                </select>
-            </div>
-            <button onclick="descargarExcel()" class="bg-green-600 text-white font-black px-6 py-3 rounded-xl hover:bg-green-700 shadow-md flex items-center justify-center">
-                <i class="fas fa-file-excel mr-2 text-lg"></i> DESCARGAR EXCEL
-            </button>
-        </div>
-
-        <div id="contenedorResumen" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div id="contenedorResumen" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             </div>
 
     </div>
 
     <script>
         const APP_URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
-        let datosGlobales = null;
-
+        
         function formatoReloj(decimal) {
             if (!decimal || decimal <= 0) return "0:00";
             const horas = Math.floor(decimal);
@@ -80,17 +70,13 @@
         function generarResumen() {
             const ini = document.getElementById('resIni').value;
             const fin = document.getElementById('resFin').value;
-            if(!ini || !fin) return alert("Selecciona el rango de fechas");
+            if(!ini || !fin) return alert("Selecciona fechas");
 
-            const contenedor = document.getElementById('contenedorResumen');
-            contenedor.innerHTML = `<div class="col-span-full text-center py-10"><i class="fas fa-spinner animate-spin text-3xl text-blue-600 mb-2"></i><p class="text-[10px] font-black text-slate-400 uppercase">Calculando sumatorias...</p></div>`;
+            document.getElementById('contenedorResumen').innerHTML = `<div class="col-span-full text-center py-20"><i class="fas fa-spinner animate-spin text-4xl text-blue-600"></i></div>`;
 
-            const callbackName = 'cb_resumen';
+            const callbackName = 'cb_resumen_full';
             window[callbackName] = function(data) {
-                datosGlobales = data;
-                renderizarTarjetas(data);
-                poblarSelectOficiales(data);
-                document.getElementById('accionesExport').classList.remove('hidden');
+                renderizar(data);
                 delete window[callbackName];
             };
 
@@ -99,109 +85,66 @@
             document.body.appendChild(script);
         }
 
-        function renderizarTarjetas(data) {
+        function renderizar(data) {
             const contenedor = document.getElementById('contenedorResumen');
-            const precioBase = parseFloat(document.getElementById('precioBase').value) || 1;
-            const factor50 = precioBase * 1.5;
-            const factor100 = precioBase * 2.0;
+            const pBase = parseFloat(document.getElementById('precioBase').value) || 1;
             let html = '';
-            
+
             Object.keys(data).forEach(oficial => {
                 const o = data[oficial];
-                const horas50 = o.h50 / factor50;
-                const horas100 = o.h100 / factor100;
+                
+                // Cálculos de horas basados en el dinero (Ingeniería inversa)
+                const horas50 = o.h50 / (pBase * 1.5);
+                const horas100 = o.h100 / (pBase * 2.0);
+                
+                // Horas extra totales (Sumatoria de lo que superó las 9h)
                 const totalHorasExtra = horas50 + horas100;
-                const totalDineroExtra = o.h50 + o.h100;
 
                 html += `
-                    <div class="bg-white p-5 rounded-2xl card-excel shadow-sm border border-slate-100">
-                        <div class="flex justify-between items-center mb-4 border-b pb-2">
-                            <h3 class="font-black text-blue-900 text-sm uppercase">${oficial}</h3>
-                            <span class="text-[9px] font-black text-slate-400 bg-slate-50 px-2 py-1 rounded border">${o.viajes} VIAJES</span>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center">
-                                <p class="text-[8px] font-bold text-blue-400 uppercase mb-1">Extras 50%</p>
-                                <p class="text-lg font-black text-blue-700">${formatoReloj(horas50)}</p>
-                                <p class="text-[9px] font-bold text-blue-400">$${o.h50.toFixed(2)}</p>
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
+                        <span class="font-black text-blue-900 uppercase text-sm">${oficial}</span>
+                        <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full">${o.viajes} VIAJES</span>
+                    </div>
+
+                    <div class="p-5 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <p class="text-[9px] font-bold text-slate-400 uppercase">Total en Ruta</p>
+                                <p class="text-xl font-black text-slate-700">${formatoReloj(o.total)}</p>
                             </div>
-                            <div class="bg-red-50 p-3 rounded-xl border border-red-100 text-center">
-                                <p class="text-[8px] font-bold text-red-400 uppercase mb-1">Extras 100%</p>
-                                <p class="text-lg font-black text-red-700">${formatoReloj(horas100)}</p>
-                                <p class="text-[9px] font-bold text-red-400">$${o.h100.toFixed(2)}</p>
+                            <div class="text-center border-l">
+                                <p class="text-[9px] font-bold text-blue-500 uppercase">Horas Extra (-9)</p>
+                                <p class="text-xl font-black text-blue-600">${formatoReloj(totalHorasExtra)}</p>
                             </div>
                         </div>
 
-                        <div class="bg-slate-900 p-4 rounded-xl shadow-inner">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] font-black text-blue-300 uppercase">Sumatoria de Tiempo Extra:</span>
-                                <span class="text-xl font-black text-white">${formatoReloj(totalHorasExtra)}</span>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center p-3 bg-orange-50 rounded-2xl border border-orange-100">
+                                <div>
+                                    <p class="text-[9px] font-bold text-orange-600 uppercase">Extras 50%</p>
+                                    <p class="text-xs font-bold text-orange-400">${formatoReloj(horas50)} Horas</p>
+                                </div>
+                                <p class="text-xl font-black text-orange-700">$${o.h50.toFixed(2)}</p>
                             </div>
-                            <div class="flex justify-between items-center pt-2 border-t border-slate-700">
-                                <span class="text-[10px] font-black text-slate-400 uppercase">Valor Total Extra ($):</span>
-                                <span class="text-lg font-bold text-green-400">$${totalDineroExtra.toFixed(2)}</span>
+
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-2xl border border-red-100">
+                                <div>
+                                    <p class="text-[9px] font-bold text-red-600 uppercase">Extras 100%</p>
+                                    <p class="text-xs font-bold text-red-400">${formatoReloj(horas100)} Horas</p>
+                                </div>
+                                <p class="text-xl font-black text-red-700">$${o.h100.toFixed(2)}</p>
                             </div>
                         </div>
-                        
-                        <div class="mt-3 text-center">
-                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tiempo Total en Ruta: ${formatoReloj(o.total)}</p>
+
+                        <div class="bg-slate-900 rounded-2xl p-4 text-center">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Total acumulado en extras</p>
+                            <p class="text-3xl font-black text-green-400">$${(o.h50 + o.h100).toFixed(2)}</p>
                         </div>
                     </div>
-                `;
+                </div>`;
             });
             contenedor.innerHTML = html;
-        }
-
-        function poblarSelectOficiales(data) {
-            const select = document.getElementById('filtroOficial');
-            select.innerHTML = '<option value="TODOS">-- EXPORTAR TODOS LOS OFICIALES --</option>';
-            Object.keys(data).sort().forEach(oficial => {
-                const opt = document.createElement('option');
-                opt.value = oficial; opt.innerText = oficial;
-                select.appendChild(opt);
-            });
-        }
-
-        function descargarExcel() {
-            if (!datosGlobales) return;
-            const oficialSeleccionado = document.getElementById('filtroOficial').value;
-            const precioBase = parseFloat(document.getElementById('precioBase').value) || 1;
-            const factor50 = precioBase * 1.5;
-            const factor100 = precioBase * 2.0;
-
-            const filasExcel = [];
-            filasExcel.push(["REPORTE CONSOLIDADO DE HORAS EXTRA Y VALORES"]);
-            filasExcel.push(["RANGO:", document.getElementById('resIni').value, "AL", document.getElementById('resFin').value]);
-            filasExcel.push([]); 
-            filasExcel.push(["OFICIAL", "TIEMPO 50%", "TIEMPO 100%", "SUMATORIA TIEMPO EXTRA", "$ TOTAL EXTRA", "TOTAL RUTA", "VIAJES"]);
-
-            const procesarFila = (oficial) => {
-                const o = datosGlobales[oficial];
-                const h50 = o.h50 / factor50;
-                const h100 = o.h100 / factor100;
-                return [
-                    oficial, 
-                    formatoReloj(h50), 
-                    formatoReloj(h100), 
-                    formatoReloj(h50 + h100),
-                    (o.h50 + o.h100).toFixed(2),
-                    formatoReloj(o.total),
-                    o.viajes
-                ];
-            };
-
-            if (oficialSeleccionado === "TODOS") {
-                Object.keys(datosGlobales).forEach(oficial => filasExcel.push(procesarFila(oficial)));
-            } else {
-                filasExcel.push(procesarFila(oficialSeleccionado));
-            }
-
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(filasExcel);
-            ws['!cols'] = [{wch:25}, {wch:15}, {wch:15}, {wch:25}, {wch:15}, {wch:15}, {wch:10}];
-            XLSX.utils.book_append_sheet(wb, ws, "Consolidado");
-            XLSX.writeFile(wb, `Reporte_Consolidado_${oficialSeleccionado}.xlsx`);
         }
     </script>
 </body>
