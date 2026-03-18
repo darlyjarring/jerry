@@ -1,46 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .active-btn { border-bottom: 3px solid #1e3a8a; color: #1e3a8a; }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-slate-100 min-h-screen">
 
-    <nav class="bg-blue-900 p-4 text-white flex justify-between shadow-lg">
-        <h1 class="font-bold">LOGIAPP EXTERNAL</h1>
-        <div class="space-x-4 text-xs font-bold">
-            <button onclick="switchTab('reg')">REGISTRO</button>
-            <button onclick="switchTab('his')">HISTORIAL</button>
+    <nav class="bg-white shadow-md sticky top-0 z-50 p-4">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-black text-blue-900 tracking-tighter">LOGIAPP <span class="text-blue-600">GH</span></h1>
+            <div class="flex space-x-6">
+                <button onclick="tab('reg')" id="b-reg" class="font-bold text-xs active-btn pb-1">REGISTRO</button>
+                <button onclick="tab('his')" id="b-his" class="font-bold text-xs text-gray-400 pb-1">HISTORIAL</button>
+            </div>
         </div>
     </nav>
 
-    <div class="max-w-4xl mx-auto p-4">
-        <div id="reg" class="tab-content block bg-white p-6 rounded shadow">
-            <form id="formLogi" class="space-y-4">
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="date" id="f1" class="border p-2 rounded text-sm" required>
-                    <input type="time" id="h1" class="border p-2 rounded text-sm" required>
-                    <input type="date" id="f2" class="border p-2 rounded text-sm" required>
-                    <input type="time" id="h2" class="border p-2 rounded text-sm" required>
-                </div>
-                <select id="ruta" class="w-full border p-2 rounded text-sm" onchange="autoCheck()"></select>
-                <input type="text" id="veh" class="w-full border p-2 rounded text-sm" placeholder="Vehículo">
-                <div class="border p-3 rounded bg-gray-50">
-                    <p class="text-[10px] font-bold text-gray-400 mb-2">SELECCIONAR OFICIALES:</p>
-                    <div id="contOfic" class="grid grid-cols-2 gap-2"></div>
-                </div>
-                <button type="submit" id="btn" class="w-full bg-blue-600 text-white font-bold py-3 rounded">GUARDAR DATOS</button>
-            </form>
+    <div class="max-w-4xl mx-auto p-4 mt-4">
+        
+        <div id="reg" class="tab-content active space-y-4">
+            <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-900">
+                <form id="formViaje" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg">
+                        <input type="date" id="f1" class="p-2 border rounded text-sm" required>
+                        <input type="time" id="h1" class="p-2 border rounded text-sm" required>
+                        <input type="date" id="f2" class="p-2 border rounded text-sm" required>
+                        <input type="time" id="h2" class="p-2 border rounded text-sm" required>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <select id="ruta" class="p-2 border rounded text-sm bg-white" onchange="checkEmpacreci()"></select>
+                        <input type="text" id="veh" class="p-2 border rounded text-sm" placeholder="Taura / Placa">
+                    </div>
+
+                    <div class="border p-4 rounded-lg bg-slate-50">
+                        <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase">Oficiales asignados:</label>
+                        <div id="listaOfic" class="grid grid-cols-2 gap-2">
+                            <p class="text-xs text-gray-400 italic">Cargando desde la nube...</p>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnS" class="w-full bg-blue-900 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-800 transition-all">
+                        <i class="fas fa-save mr-2"></i>GUARDAR REGISTRO
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <div id="his" class="tab-content hidden space-y-4">
-            <div class="bg-white rounded shadow overflow-hidden">
+        <div id="his" class="tab-content space-y-4">
+            <div class="bg-white p-4 rounded-lg shadow overflow-x-auto">
                 <table class="w-full text-[10px] text-left">
-                    <thead class="bg-gray-200">
-                        <tr><th class="p-2">Fecha</th><th class="p-2">Ruta</th><th class="p-2">Hrs</th><th class="p-2">Oficiales</th></tr>
+                    <thead class="bg-blue-900 text-white">
+                        <tr>
+                            <th class="p-3">FECHA</th>
+                            <th class="p-3">RUTA</th>
+                            <th class="p-3">HRS</th>
+                            <th class="p-3">50%</th>
+                            <th class="p-3">100%</th>
+                        </tr>
                     </thead>
-                    <tbody id="tBody" class="divide-y"></tbody>
+                    <tbody id="resBody" class="divide-y divide-gray-100"></tbody>
                 </table>
             </div>
         </div>
@@ -48,48 +73,71 @@
 
     <script>
         // TU URL DE GOOGLE APPS SCRIPT
-        const URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
+        const APP_URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
         
-        let db = [];
+        let localDB = [];
 
         window.onload = () => {
-            // CARGAR DATOS USANDO FETCH (EVITA EL ERROR DE 'GOOGLE IS NOT DEFINED')
-            fetch(URL + "?action=getData")
-                .then(res => res.json())
-                .then(res => {
-                    document.getElementById('ruta').innerHTML = res.rutas.map(r => `<option value="${r}">${r}</option>`).join('');
-                    document.getElementById('contOfic').innerHTML = res.oficiales.map(o => `
-                        <label class="flex items-center space-x-2 text-[11px] p-1 border rounded bg-white">
-                            <input type="checkbox" name="of" value="${o}" class="of-ck"> <span>${o}</span>
-                        </label>
-                    `).join('');
-                    db = res.historial;
-                    render(db);
-                });
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('f1').value = hoy;
+            document.getElementById('f2').value = hoy;
+            cargarDatos();
         };
 
-        function switchTab(id) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
+        function tab(id) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('b-reg').className = id === 'reg' ? 'font-bold text-xs active-btn pb-1' : 'font-bold text-xs text-gray-400 pb-1';
+            document.getElementById('b-his').className = id === 'his' ? 'font-bold text-xs active-btn pb-1' : 'font-bold text-xs text-gray-400 pb-1';
         }
 
-        function render(data) {
-            document.getElementById('tBody').innerHTML = data.map(r => `
-                <tr><td class="p-2">${r.fecha}</td><td class="p-2 font-bold">${r.ruta}</td><td class="p-2">${r.totalHrs}</td><td class="p-2 text-gray-500">${r.oficiales}</td></tr>
-            `).reverse().join('');
-        }
+        async function cargarDatos() {
+            try {
+                // FETCH CON REDIRECT:FOLLOW PARA EVITAR CORS
+                const response = await fetch(APP_URL + "?action=getData", { redirect: 'follow' });
+                const res = await response.json();
+                
+                // Llenar Rutas
+                document.getElementById('ruta').innerHTML = res.rutas.map(r => `<option value="${r}">${r}</option>`).join('');
+                
+                // Llenar Oficiales
+                document.getElementById('listaOfic').innerHTML = res.oficiales.map(o => `
+                    <label class="flex items-center space-x-2 p-2 border rounded bg-white text-[11px] font-bold">
+                        <input type="checkbox" name="ofic" value="${o}" class="ck-ofic"> <span>${o}</span>
+                    </label>
+                `).join('');
 
-        function autoCheck() {
-            if(document.getElementById('ruta').value.toLowerCase().includes("empacreci")) {
-                document.querySelectorAll('.of-ck').forEach(c => c.checked = true);
+                localDB = res.historial;
+                render(localDB);
+                checkEmpacreci();
+            } catch (e) {
+                console.error("Error cargando:", e);
             }
         }
 
-        document.getElementById('formLogi').addEventListener('submit', function(e) {
+        function render(data) {
+            document.getElementById('resBody').innerHTML = data.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-bold text-blue-900">${r.fecha}</td>
+                    <td class="p-3">${r.ruta}</td>
+                    <td class="p-3 font-mono">${r.totalHrs}</td>
+                    <td class="p-3 text-blue-600">${r.h50 || '-'}</td>
+                    <td class="p-3 text-red-600">${r.h100 || '-'}</td>
+                </tr>
+            `).reverse().join('');
+        }
+
+        function checkEmpacreci() {
+            if(document.getElementById('ruta').value.toLowerCase().includes("empacreci")) {
+                document.querySelectorAll('.ck-ofic').forEach(c => c.checked = true);
+            }
+        }
+
+        document.getElementById('formViaje').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn');
+            const btn = document.getElementById('btnS');
             btn.disabled = true;
-            btn.innerText = "ENVIANDO...";
+            btn.innerHTML = "<i class='fas fa-spinner animate-spin'></i> GUARDANDO...";
 
             const d1 = new Date(`${document.getElementById('f1').value}T${document.getElementById('h1').value}`);
             const d2 = new Date(`${document.getElementById('f2').value}T${document.getElementById('h2').value}`);
@@ -109,17 +157,21 @@
                 alimentacion: "5.50",
                 ruta: document.getElementById('ruta').value,
                 vehiculo: document.getElementById('veh').value,
-                oficiales: Array.from(document.querySelectorAll('.of-ck:checked')).map(c => c.value).join(", "),
+                oficiales: Array.from(document.querySelectorAll('.ck-ofic:checked')).map(c => c.value).join(", "),
                 observaciones: ""
             };
 
-            fetch(URL, {
+            // ENVÍO POST CON NO-CORS
+            fetch(APP_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 body: JSON.stringify(payload)
             }).then(() => {
-                alert("Guardado!");
+                alert("✓ ¡Datos guardados en Excel!");
                 location.reload();
+            }).catch(err => {
+                alert("Error de red");
+                btn.disabled = false;
             });
         });
     </script>
