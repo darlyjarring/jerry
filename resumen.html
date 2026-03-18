@@ -73,7 +73,7 @@
         const APP_URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
         let datosGlobales = null;
 
-        // Función SOLO para el Total (Decimal a HH:MM)
+        // Función para convertir decimal a formato HH:MM (Solo para el Total)
         function decimalAHora(decimal) {
             if (!decimal || decimal === 0) return "0:00";
             const horas = Math.floor(decimal);
@@ -137,11 +137,11 @@
                             </div>
                             <div class="bg-blue-50 p-2 rounded-lg text-center">
                                 <p class="text-[8px] font-bold text-blue-400 uppercase">Suma 50%</p>
-                                <p class="text-sm font-black text-blue-700">${o.h50.toFixed(2)}</p>
+                                <p class="text-sm font-black text-blue-700">$${o.h50.toFixed(2)}</p>
                             </div>
                             <div class="bg-red-50 p-2 rounded-lg text-center">
                                 <p class="text-[8px] font-bold text-red-400 uppercase">Suma 100%</p>
-                                <p class="text-sm font-black text-red-700">${o.h100.toFixed(2)}</p>
+                                <p class="text-sm font-black text-red-700">$${o.h100.toFixed(2)}</p>
                             </div>
                         </div>
                     </div>
@@ -169,15 +169,15 @@
             filasExcel.push(["REPORTE DE HORAS LABORADAS"]);
             filasExcel.push(["RANGO:", document.getElementById('resIni').value, "AL", document.getElementById('resFin').value]);
             filasExcel.push([]); 
-            filasExcel.push(["OFICIAL", "TOTAL HORAS (HH:MM)", "SUMA 50% (DECIMAL)", "SUMA 100% (DECIMAL)", "CANTIDAD VIAJES"]);
+            filasExcel.push(["OFICIAL", "TOTAL HORAS (HH:MM)", "SUMA 50% ($)", "SUMA 100% ($)", "CANTIDAD VIAJES"]);
 
             const procesarFila = (oficial) => {
                 const o = datosGlobales[oficial];
                 return [
                     oficial, 
                     decimalAHora(o.total), 
-                    o.h50.toFixed(2), 
-                    o.h100.toFixed(2), 
+                    "$" + o.h50.toFixed(2), 
+                    "$" + o.h100.toFixed(2), 
                     o.viajes
                 ];
             };
