@@ -91,30 +91,35 @@
             document.getElementById('b-his').className = id === 'his' ? 'font-bold text-xs active-btn pb-1' : 'font-bold text-xs text-gray-400 pb-1';
         }
 
-        async function cargarDatos() {
-            try {
-                // FETCH CON REDIRECT:FOLLOW PARA EVITAR CORS
-                const response = await fetch(APP_URL + "?action=getData", { redirect: 'follow' });
-                const res = await response.json();
-                
-                // Llenar Rutas
-                document.getElementById('ruta').innerHTML = res.rutas.map(r => `<option value="${r}">${r}</option>`).join('');
-                
-                // Llenar Oficiales
-                document.getElementById('listaOfic').innerHTML = res.oficiales.map(o => `
-                    <label class="flex items-center space-x-2 p-2 border rounded bg-white text-[11px] font-bold">
-                        <input type="checkbox" name="ofic" value="${o}" class="ck-ofic"> <span>${o}</span>
-                    </label>
-                `).join('');
+        function cargarDatos() {
+    // Creamos un nombre de función temporal para recibir los datos
+    const callbackName = 'callback_' + Math.round(Math.random() * 1000000);
+    
+    window[callbackName] = function(res) {
+        // Llenar Rutas
+        document.getElementById('ruta').innerHTML = res.rutas.map(r => 
+            `<option value="${r}">${r}</option>`).join('');
+        
+        // Llenar Oficiales
+        document.getElementById('listaOfic').innerHTML = res.oficiales.map(o => `
+            <label class="flex items-center space-x-2 p-2 border rounded bg-white text-[11px] font-bold">
+                <input type="checkbox" name="ofic" value="${o}" class="ck-ofic"> <span>${o}</span>
+            </label>
+        `).join('');
 
-                localDB = res.historial;
-                render(localDB);
-                checkEmpacreci();
-            } catch (e) {
-                console.error("Error cargando:", e);
-            }
-        }
+        localDB = res.historial;
+        render(localDB);
+        checkEmpacreci();
+        
+        // Limpiar el script del documento
+        delete window[callbackName];
+    };
 
+    // Creamos el elemento script que hace la petición saltando el CORS
+    const script = document.createElement('script');
+    script.src = APP_URL + "?action=getData&callback=" + callbackName;
+    document.body.appendChild(script);
+}
         function render(data) {
             document.getElementById('resBody').innerHTML = data.map(r => `
                 <tr class="hover:bg-slate-50">
