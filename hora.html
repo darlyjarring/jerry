@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumen de Horas - LogiApp GH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .card-excel { border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        .card-excel:hover { transform: translateY(-2px); shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-10">
+
+    <nav class="bg-blue-900 text-white p-4 shadow-lg">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-calculator text-xl text-blue-300"></i>
+                <h1 class="text-lg font-black tracking-tighter uppercase">Liquidación de <span class="text-blue-300">Oficiales</span></h1>
+            </div>
+            <a href="index.html" class="text-[10px] bg-blue-800 px-3 py-1 rounded-full font-bold hover:bg-blue-700">
+                <i class="fas fa-arrow-left mr-1"></i> VOLVER AL REGISTRO
+            </a>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto p-4 space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Parámetros de Cálculo</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase text-blue-600">Valor Hora 50% ($)</label>
+                    <input type="number" id="val50" value="1.00" step="0.01" class="w-full p-2 bg-blue-50 border border-blue-100 rounded-lg text-sm font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase text-red-600">Valor Hora 100% ($)</label>
+                    <input type="number" id="val100" value="2.00" step="0.01" class="w-full p-2 bg-red-50 border border-red-100 rounded-lg text-sm font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha Inicio</label>
+                    <input type="date" id="resIni" class="w-full p-2 bg-slate-50 border rounded-lg text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha Fin</label>
+                    <input type="date" id="resFin" class="w-full p-2 bg-slate-50 border rounded-lg text-sm outline-none">
+                </div>
+            </div>
+            <button onclick="generarResumen()" class="w-full mt-4 bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95">
+                <i class="fas fa-sync-alt mr-2"></i> GENERAR LIQUIDACIÓN
+            </button>
+        </div>
+
+        <div id="accionesExport" class="hidden flex flex-col md:flex-row gap-3">
+            <div class="flex-1">
+                <select id="filtroOficial" class="w-full p-3 bg-white border rounded-xl text-sm font-bold text-blue-900 shadow-sm outline-none">
+                    <option value="TODOS">-- EXPORTAR NÓMINA COMPLETA --</option>
+                </select>
+            </div>
+            <button onclick="descargarExcel()" class="bg-green-600 text-white font-black px-6 py-3 rounded-xl hover:bg-green-700 shadow-md flex items-center justify-center">
+                <i class="fas fa-file-excel mr-2 text-lg"></i> DESCARGAR EXCEL
+            </button>
+        </div>
+
+        <div id="contenedorResumen" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </div>
+
+    </div>
+
+    <script>
+        const APP_URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
+        let datosGlobales = null;
+
+        function decimalAHora(decimal) {
+            if (!decimal || decimal === 0) return "0:00";
+            const horas = Math.floor(decimal);
+            const minutos = Math.round((decimal - horas) * 60);
+            return `${horas}:${minutos.toString().padStart(2, '0')}`;
+        }
+
+        function generarResumen() {
+            const ini = document.getElementById('resIni').value;
+            const fin = document.getElementById('resFin').value;
+            if(!ini || !fin) return alert("Selecciona el rango de fechas");
+
+            const contenedor = document.getElementById('contenedorResumen');
+            contenedor.innerHTML = `<div class="col-span-full text-center py-10"><i class="fas fa-spinner animate-spin text-3xl text-blue-600 mb-2"></i><p class="text-xs font-bold text-slate-500 uppercase">Calculando Valores...</p></div>`;
+
+            const callbackName = 'cb_resumen';
+            window[callbackName] = function(data) {
+                datosGlobales = data;
+                renderizarTarjetas(data);
+                poblarSelectOficiales(data);
+                document.getElementById('accionesExport').classList.remove('hidden');
+                delete window[callbackName];
+            };
+
+            const script = document.createElement('script');
+            script.src = `${APP_URL}?action=getResumen&ini=${ini}&fin=${fin}&callback=${callbackName}`;
+            document.body.appendChild(script);
+        }
+
+        function renderizarTarjetas(data) {
+            const contenedor = document.getElementById('contenedorResumen');
+            const v50 = parseFloat(document.getElementById('val50').value) || 0;
+            const v100 = parseFloat(document.getElementById('val100').value) || 0;
+            let html = '';
+            
+            Object.keys(data).forEach(oficial => {
+                const o = data[oficial];
+                const pago50 = o.h50 * v50;
+                const pago100 = o.h100 * v100;
+                const totalDolares = pago50 + pago100;
+
+                html += `
+                    <div class="bg-white p-5 rounded-2xl card-excel shadow-sm border border-slate-100">
+                        <div class="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 class="font-black text-blue-900 text-sm uppercase">${oficial}</h3>
+                            <span class="text-[10px] font-bold text-slate-400">${o.viajes} VIAJES</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-2 mb-4">
+                            <div class="text-center">
+                                <p class="text-[8px] font-bold text-slate-400 uppercase">Total Horas</p>
+                                <p class="text-xs font-black text-slate-700">${decimalAHora(o.total)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-[8px] font-bold text-slate-400 uppercase">Cant. 50%</p>
+                                <p class="text-xs font-black text-blue-600">${o.h50.toFixed(2)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-[8px] font-bold text-slate-400 uppercase">Cant. 100%</p>
+                                <p class="text-xs font-black text-red-600">${o.h100.toFixed(2)}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl space-y-2">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="font-medium text-slate-500 underline">Valor Extras 50%:</span>
+                                <span class="font-bold text-slate-700">$${pago50.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between text-[10px]">
+                                <span class="font-medium text-slate-500 underline">Valor Extras 100%:</span>
+                                <span class="font-bold text-slate-700">$${pago100.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 border-t border-slate-200">
+                                <span class="text-[9px] font-black text-blue-900 uppercase">Total a Recibir:</span>
+                                <span class="text-lg font-black text-green-700">$${totalDolares.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            contenedor.innerHTML = html;
+        }
+
+        function poblarSelectOficiales(data) {
+            const select = document.getElementById('filtroOficial');
+            select.innerHTML = '<option value="TODOS">-- EXPORTAR NÓMINA COMPLETA --</option>';
+            Object.keys(data).sort().forEach(oficial => {
+                const opt = document.createElement('option');
+                opt.value = oficial; opt.innerText = oficial;
+                select.appendChild(opt);
+            });
+        }
+
+        function descargarExcel() {
+            if (!datosGlobales) return;
+            const oficialSeleccionado = document.getElementById('filtroOficial').value;
+            const v50 = parseFloat(document.getElementById('val50').value) || 0;
+            const v100 = parseFloat(document.getElementById('val100').value) || 0;
+            const filasExcel = [];
+            
+            filasExcel.push(["REPORTE DE LIQUIDACIÓN DE HORAS EXTRA"]);
+            filasExcel.push(["RANGO:", document.getElementById('resIni').value, "AL", document.getElementById('resFin').value]);
+            filasExcel.push(["PRECIOS APLICADOS:", `50% -> $${v50}`, `100% -> $${v100}`]);
+            filasExcel.push([]); 
+            filasExcel.push(["OFICIAL", "TOTAL HH:MM", "HORAS 50%", "HORAS 100%", "$ PAGO 50%", "$ PAGO 100%", "$ TOTAL EXTRA", "VIAJES"]);
+
+            const procesarFila = (oficial) => {
+                const o = datosGlobales[oficial];
+                const p50 = o.h50 * v50;
+                const p100 = o.h100 * v100;
+                return [
+                    oficial, decimalAHora(o.total), o.h50.toFixed(2), o.h100.toFixed(2), 
+                    p50.toFixed(2), p100.toFixed(2), (p50 + p100).toFixed(2), o.viajes
+                ];
+            };
+
+            if (oficialSeleccionado === "TODOS") {
+                Object.keys(datosGlobales).forEach(oficial => filasExcel.push(procesarFila(oficial)));
+            } else {
+                filasExcel.push(procesarFila(oficialSeleccionado));
+            }
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(filasExcel);
+            ws['!cols'] = [{wch:25}, {wch:15}, {wch:12}, {wch:12}, {wch:12}, {wch:12}, {wch:15}, {wch:10}];
+            XLSX.utils.book_append_sheet(wb, ws, "Liquidacion");
+            XLSX.writeFile(wb, `Liquidacion_${oficialSeleccionado.replace(/ /g, '_')}.xlsx`);
+        }
+    </script>
+</body>
+</html>
