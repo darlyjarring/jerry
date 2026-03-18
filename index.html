@@ -1,100 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .active-tab { border-bottom: 4px solid #1e3a8a; color: #1e3a8a; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
 </head>
-<body class="bg-slate-100 p-4">
+<body class="bg-gray-100">
 
-    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-6 border-t-8 border-blue-900">
-        <h1 class="text-2xl font-black text-blue-900 mb-6 uppercase tracking-tighter"><i class="fas fa-truck"></i> Registro de Operaciones</h1>
-        
-        <form id="formLogistica" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">INICIO (Fecha y Hora)</label>
-                    <div class="flex gap-2">
-                        <input type="date" id="f1" class="w-full p-2 border rounded" required>
-                        <input type="time" id="h1" class="p-2 border rounded" required>
-                    </div>
+    <nav class="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-50">
+        <h1 class="font-black text-blue-900">LOGIAPP SYSTEM</h1>
+        <div class="flex space-x-4">
+            <button onclick="switchTab('reg')" id="t-reg" class="font-bold text-xs active-tab pb-1">REGISTRO</button>
+            <button onclick="switchTab('his')" id="t-his" class="font-bold text-xs text-gray-400 pb-1">HISTORIAL</button>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto p-4">
+        <div id="reg" class="tab-content active bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-900">
+            <form id="formLogi" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded">
+                    <input type="date" id="f1" class="p-2 border rounded text-sm" required>
+                    <input type="time" id="h1" class="p-2 border rounded text-sm" required>
+                    <input type="date" id="f2" class="p-2 border rounded text-sm" required>
+                    <input type="time" id="h2" class="p-2 border rounded text-sm" required>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">FINAL (Fecha y Hora)</label>
-                    <div class="flex gap-2">
-                        <input type="date" id="f2" class="w-full p-2 border rounded" required>
-                        <input type="time" id="h2" class="p-2 border rounded" required>
-                    </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <select id="ruta" class="p-2 border rounded text-sm bg-white" onchange="autoCheck()"></select>
+                    <input type="text" id="veh" class="p-2 border rounded text-sm" placeholder="Vehículo">
                 </div>
+
+                <div class="border p-3 rounded bg-gray-50">
+                    <label class="block text-[10px] font-bold text-gray-500 mb-2">OFICIALES DISPONIBLES:</label>
+                    <div id="contOfic" class="grid grid-cols-2 gap-2"></div>
+                </div>
+
+                <button type="submit" id="btn" class="w-full bg-blue-900 text-white font-bold py-3 rounded-lg">
+                    GUARDAR EN GOOGLE SHEETS
+                </button>
+            </form>
+        </div>
+
+        <div id="his" class="tab-content space-y-4">
+            <div class="bg-white p-4 rounded shadow flex gap-2">
+                <input type="date" id="dDesde" class="p-1 border rounded text-xs">
+                <input type="date" id="dHasta" class="p-1 border rounded text-xs">
+                <button onclick="filtrar()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">FILTRAR</button>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">RUTA (Desde Excel)</label>
-                    <select id="ruta" class="w-full p-2 border rounded bg-white" onchange="checkEmpacreci()"></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">VEHÍCULOS/TAURAS</label>
-                    <input type="text" id="vehiculo" class="w-full p-2 border rounded" placeholder="24-24-35-35">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">ALIMENTACIÓN</label>
-                    <input type="number" step="0.01" id="alim" class="w-full p-2 border rounded" value="5.50">
-                </div>
+            <div class="bg-white rounded shadow overflow-x-auto">
+                <table class="w-full text-[10px] text-left">
+                    <thead class="bg-gray-800 text-white">
+                        <tr><th class="p-2">Fecha</th><th class="p-2">Ruta</th><th class="p-2">Hrs</th><th class="p-2">50%</th><th class="p-2">100%</th></tr>
+                    </thead>
+                    <tbody id="tBody" class="divide-y"></tbody>
+                </table>
             </div>
-
-            <div class="border rounded-lg p-4">
-                <label class="block text-xs font-bold text-gray-500 mb-3 uppercase">Oficiales registrados en Excel:</label>
-                <div id="listaOficiales" class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <p class="text-gray-400 italic">Cargando base de datos...</p>
-                </div>
-            </div>
-
-            <button type="submit" id="btn" class="w-full bg-blue-900 text-white font-bold py-4 rounded-lg hover:bg-blue-800 transition-all">
-                <i class="fas fa-save mr-2"></i> GUARDAR EN GOOGLE SHEETS
-            </button>
-        </form>
+        </div>
     </div>
 
     <script>
-        // Cargar datos al abrir
+        // ESTA ES TU URL CONECTADA
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
+        let datosOriginales = [];
+
         window.onload = () => {
-            google.script.run.withSuccessHandler(data => {
-                // Cargar Rutas
-                const selectRuta = document.getElementById('ruta');
-                selectRuta.innerHTML = data.rutas.map(r => `<option value="${r}">${r}</option>`).join('');
-                
-                // Cargar Oficiales
-                const container = document.getElementById('listaOficiales');
-                container.innerHTML = data.oficiales.map(o => `
-                    <label class="flex items-center space-x-2 p-2 border rounded hover:bg-blue-50 cursor-pointer">
-                        <input type="checkbox" name="ofic" value="${o}" class="ofic-check">
-                        <span class="text-sm">${o}</span>
+            // Carga inicial usando el puente de Google Apps Script
+            google.script.run.withSuccessHandler(res => {
+                document.getElementById('ruta').innerHTML = res.rutas.map(r => `<option value="${r}">${r}</option>`).join('');
+                document.getElementById('contOfic').innerHTML = res.oficiales.map(o => `
+                    <label class="flex items-center space-x-2 text-[11px] p-1 border rounded bg-white">
+                        <input type="checkbox" name="of" value="${o}" class="of-ck"> <span>${o}</span>
                     </label>
                 `).join('');
-                
-                checkEmpacreci();
+                datosOriginales = res.historial;
+                render(datosOriginales);
             }).getDataInicial();
         };
 
-        function checkEmpacreci() {
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function render(data) {
+            document.getElementById('tBody').innerHTML = data.map(r => `
+                <tr><td class="p-2">${r.fecha}</td><td class="p-2">${r.ruta}</td><td class="p-2">${r.totalHrs}</td><td class="p-2">${r.h50}</td><td class="p-2 text-red-600">${r.h100}</td></tr>
+            `).reverse().join('');
+        }
+
+        function filtrar() {
+            const d = document.getElementById('dDesde').value;
+            const h = document.getElementById('dHasta').value;
+            let res = datosOriginales;
+            if(d) res = res.filter(r => r.fecha >= d);
+            if(h) res = res.filter(r => r.fecha <= h);
+            render(res);
+        }
+
+        function autoCheck() {
             if(document.getElementById('ruta').value.toLowerCase().includes("empacreci")) {
-                document.querySelectorAll('.ofic-check').forEach(c => c.checked = true);
+                document.querySelectorAll('.of-ck').forEach(c => c.checked = true);
             }
         }
 
-        document.getElementById('formLogistica').addEventListener('submit', function(e) {
+        document.getElementById('formLogi').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('btn');
-            
-            const t1 = new Date(`${document.getElementById('f1').value}T${document.getElementById('h1').value}`);
-            const t2 = new Date(`${document.getElementById('f2').value}T${document.getElementById('h2').value}`);
-            const diff = (t2 - t1) / (1000 * 60 * 60);
-
-            const totalStr = `${Math.floor(diff)}:${Math.round((diff % 1) * 60).toString().padStart(2, '0')}`;
-            const r9 = diff > 9 ? (diff - 9) : 0;
-            const esDom = t1.getDay() === 0;
-
-            const seleccionados = Array.from(document.querySelectorAll('.ofic-check:checked')).map(c => c.value).join("\n");
+            const d1 = new Date(`${document.getElementById('f1').value}T${document.getElementById('h1').value}`);
+            const d2 = new Date(`${document.getElementById('f2').value}T${document.getElementById('h2').value}`);
+            const diff = (d2 - d1) / 36e5;
 
             const payload = {
                 fechaIni: document.getElementById('f1').value,
@@ -103,26 +122,32 @@
                 horaFin: document.getElementById('h2').value,
                 fullIni: document.getElementById('f1').value + " " + document.getElementById('h1').value,
                 fullFin: document.getElementById('f2').value + " " + document.getElementById('h2').value,
-                totalHrs: totalStr,
-                resta9: r9.toFixed(2),
-                h50: esDom ? "" : r9.toFixed(2),
-                h100: esDom ? r9.toFixed(2) : "",
-                alimentacion: document.getElementById('alim').value,
+                totalHrs: Math.floor(diff) + ":" + Math.round((diff % 1) * 60).toString().padStart(2, '0'),
+                resta9: diff > 9 ? (diff - 9).toFixed(2) : 0,
+                h50: d1.getDay() !== 0 && diff > 9 ? (diff - 9).toFixed(2) : "",
+                h100: d1.getDay() === 0 && diff > 9 ? (diff - 9).toFixed(2) : "",
+                alimentacion: "5.50",
                 ruta: document.getElementById('ruta').value,
-                vehiculo: document.getElementById('vehiculo').value,
-                oficiales: seleccionados,
+                vehiculo: document.getElementById('veh').value,
+                oficiales: Array.from(document.querySelectorAll('.of-ck:checked')).map(c => c.value).join(", "),
                 observaciones: ""
             };
 
             btn.disabled = true;
-            btn.innerHTML = "GUARDANDO...";
+            btn.innerHTML = "ENVIANDO A GOOGLE SHEETS...";
 
-            google.script.run.withSuccessHandler(() => {
-                alert("¡Guardado con éxito!");
+            // CONEXIÓN DIRECTA POR FETCH A TU URL
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            }).then(() => {
+                alert("¡Guardado correctamente!");
+                location.reload();
+            }).catch(() => {
+                alert("Error de conexión");
                 btn.disabled = false;
-                btn.innerHTML = "GUARDAR EN GOOGLE SHEETS";
-                this.reset();
-            }).guardarRegistro(payload);
+            });
         });
     </script>
 </body>
