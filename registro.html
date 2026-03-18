@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiApp - Gestión de Rutas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .active-tab { border-bottom: 4px solid #1e3a8a; color: #1e3a8a; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <nav class="bg-white shadow-md mb-6">
+        <div class="max-w-6xl mx-auto flex justify-between items-center p-4">
+            <h1 class="text-xl font-bold text-blue-900"><i class="fas fa-truck-loading mr-2"></i>SISTEMA LOGÍSTICO</h1>
+            <div class="flex space-x-6">
+                <button onclick="switchTab('registro')" id="btn-registro" class="pb-2 font-semibold active-tab">REGISTRO</button>
+                <button onclick="switchTab('historial')" id="btn-historial" class="pb-2 font-semibold text-gray-500">HISTORIAL</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto p-4">
+        
+        <div id="registro" class="tab-content active">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <form id="main-form" class="space-y-6">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-blue-50 p-4 rounded-lg">
+                        <div><label class="block text-xs font-bold text-gray-600 mb-1">FECHA INICIO</label><input type="date" id="f-ini" class="w-full p-2 border rounded" required></div>
+                        <div><label class="block text-xs font-bold text-gray-600 mb-1">HORA INICIO</label><input type="time" id="h-ini" class="w-full p-2 border rounded" required></div>
+                        <div><label class="block text-xs font-bold text-gray-600 mb-1">FECHA FIN</label><input type="date" id="f-fin" class="w-full p-2 border rounded" required></div>
+                        <div><label class="block text-xs font-bold text-gray-600 mb-1">HORA FIN</label><input type="time" id="h-fin" class="w-full p-2 border rounded" required></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">RUTA</label>
+                            <select id="ruta" class="w-full p-2 border rounded" onchange="autoCheckOficiales()">
+                                <option value="Empacreci">Empacreci</option>
+                                <option value="Huaquillas">Huaquillas</option>
+                                <option value="Taura">Taura</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-xs font-bold text-gray-600 mb-1">VEHÍCULOS (TAURAS)</label><input type="text" id="vehiculo" class="w-full p-2 border rounded" placeholder="Ej: 24-35"></div>
+                        <div><label class="block text-xs font-bold text-gray-600 mb-1">ALIMENTACIÓN ($)</label><input type="number" step="0.01" id="alim" class="w-full p-2 border rounded" value="5.50"></div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-2">OFICIALES ASIGNADOS</label>
+                        <div id="oficiales-list" class="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 border rounded bg-gray-50">
+                            </div>
+                    </div>
+
+                    <button type="submit" id="btn-enviar" class="w-full bg-blue-900 text-white font-bold py-3 rounded-lg hover:bg-blue-800 transition">
+                        <i class="fas fa-cloud-upload-alt mr-2"></i>GUARDAR EN GOOGLE SHEETS
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="historial" class="tab-content">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-800 text-white">
+                        <tr>
+                            <th class="p-3">FECHA</th>
+                            <th class="p-3">HORAS</th>
+                            <th class="p-3">H. 50%</th>
+                            <th class="p-3">H. 100%</th>
+                            <th class="p-3">RUTA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historial-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Reemplaza con tu URL de despliegue
+        const WEB_APP_URL = "TU_URL_AQUI"; 
+        
+        const oficialesBase = ["Mario Contreras", "Elkin Zambrano", "Jackson Cusme"];
+        let historialLocal = [];
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            document.getElementById('btn-registro').className = tabId === 'registro' ? 'pb-2 font-semibold active-tab' : 'pb-2 font-semibold text-gray-500';
+            document.getElementById('btn-historial').className = tabId === 'historial' ? 'pb-2 font-semibold active-tab' : 'pb-2 font-semibold text-gray-500';
+        }
+
+        function renderOficiales() {
+            const container = document.getElementById('oficiales-list');
+            container.innerHTML = oficialesBase.map(o => `
+                <label class="flex items-center space-x-2 p-2 bg-white border rounded cursor-pointer">
+                    <input type="checkbox" name="oficial" value="${o}" class="oficial-check">
+                    <span class="text-sm">${o}</span>
+                </label>
+            `).join('');
+        }
+
+        function autoCheckOficiales() {
+            if(document.getElementById('ruta').value === "Empacreci") {
+                document.querySelectorAll('.oficial-check').forEach(c => c.checked = true);
+            }
+        }
+
+        document.getElementById('main-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-enviar');
+            
+            // Cálculos lógicos
+            const t1 = new Date(`${document.getElementById('f-ini').value}T${document.getElementById('h-ini').value}`);
+            const t2 = new Date(`${document.getElementById('f-fin').value}T${document.getElementById('h-fin').value}`);
+            const diff = (t2 - t1) / (1000 * 60 * 60);
+            
+            if (diff < 0) return alert("Error en las fechas");
+
+            const hrs = Math.floor(diff);
+            const min = Math.round((diff % 1) * 60);
+            const totalStr = `${hrs}:${min.toString().padStart(2, '0')}`;
+            const resta9 = diff > 9 ? (diff - 9) : 0;
+            const esDom = t1.getDay() === 0;
+
+            const seleccionados = Array.from(document.querySelectorAll('.oficial-check:checked')).map(c => c.value);
+
+            const payload = {
+                sheetName: "EMPACRECI",
+                registros: [{
+                    fechaIni: document.getElementById('f-ini').value,
+                    horaIni: document.getElementById('h-ini').value,
+                    fechaFin: document.getElementById('f-fin').value,
+                    horaFin: document.getElementById('h-fin').value,
+                    fullIni: `${document.getElementById('f-ini').value} ${document.getElementById('h-ini').value}`,
+                    fullFin: `${document.getElementById('f-fin').value} ${document.getElementById('h-fin').value}`,
+                    totalHrs: totalStr,
+                    resta9: resta9.toFixed(2),
+                    h50: esDom ? "" : resta9.toFixed(2),
+                    h100: esDom ? resta9.toFixed(2) : "",
+                    alimentacion: document.getElementById('alim').value,
+                    ruta: document.getElementById('ruta').value,
+                    vehiculo: document.getElementById('vehiculo').value,
+                    oficiales: seleccionados.join(", "),
+                    observaciones: ""
+                }]
+            };
+
+            btn.disabled = true;
+            btn.innerHTML = "<i class='fas fa-spinner animate-spin mr-2'></i>ENVIANDO...";
+
+            try {
+                if(WEB_APP_URL !== "TU_URL_AQUI") {
+                    await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify(payload)
+                    });
+                }
+                
+                historialLocal.push(payload.registros[0]);
+                renderHistorial();
+                alert("Guardado correctamente");
+                this.reset();
+                renderOficiales();
+            } catch (err) {
+                alert("Error al enviar");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "<i class='fas fa-cloud-upload-alt mr-2'></i>GUARDAR EN GOOGLE SHEETS";
+            }
+        });
+
+        function renderHistorial() {
+            const body = document.getElementById('historial-body');
+            body.innerHTML = historialLocal.map(r => `
+                <tr class="border-b">
+                    <td class="p-3">${r.fechaIni}</td>
+                    <td class="p-3 font-bold">${r.totalHrs}</td>
+                    <td class="p-3">${r.h50 || '0.00'}</td>
+                    <td class="p-3 text-red-600">${r.h100 || '0.00'}</td>
+                    <td class="p-3">${r.ruta}</td>
+                </tr>
+            `).reverse().join('');
+        }
+
+        window.onload = renderOficiales;
+    </script>
+</body>
+</html>
