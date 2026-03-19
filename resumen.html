@@ -84,65 +84,63 @@
     }
 
     function renderizar(data) {
-        const contenedor = document.getElementById('contenedorResumen');
-        const pBase = parseFloat(document.getElementById('precioBase').value) || 2.50;
-        let html = '';
+    const contenedor = document.getElementById('contenedorResumen');
+    let html = '';
 
-        Object.keys(data).forEach(oficial => {
-            const o = data[oficial];
-            
-            // Si el servidor no envió dinero (v50/v100), lo calculamos aquí sobre las horas
-            const dinero50 = o.v50 || (o.h50 * pBase * 1.5);
-            const dinero100 = o.v100 || (o.h100 * pBase * 2.0);
-            const totalDinero = dinero50 + dinero100;
-            const totalHorasExtra = o.h50 + o.h100;
+    Object.keys(data).forEach(oficial => {
+        const o = data[oficial];
+        
+        // Sumamos las horas que el servidor ya procesó correctamente
+        const totalHorasExtra = o.h50 + o.h100;
+        // Sumamos el dinero (v50 y v100)
+        const totalDinero = o.v50 + o.v100;
 
-            html += `
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden card-excel">
-                <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
-                    <span class="font-black text-blue-900 uppercase text-sm">${oficial}</span>
-                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase">${o.viajes} Días</span>
-                </div>
+        html += `
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
+                <span class="font-black text-blue-900 uppercase text-sm">${oficial}</span>
+                <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full">${o.viajes} DÍAS</span>
+            </div>
 
-                <div class="p-5 space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="text-center">
-                            <p class="text-[9px] font-bold text-slate-400 uppercase">Total en Ruta</p>
-                            <p class="text-xl font-black text-slate-700">${formatoReloj(o.total)}</p>
-                        </div>
-                        <div class="text-center border-l">
-                            <p class="text-[9px] font-bold text-blue-500 uppercase">Total Horas Extra</p>
-                            <p class="text-xl font-black text-blue-600">${formatoReloj(totalHorasExtra)}</p>
-                        </div>
+            <div class="p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase">Tiempo en Ruta</p>
+                        <p class="text-xl font-black text-slate-700">${formatoReloj(o.total)}</p>
                     </div>
-
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center p-3 bg-orange-50 rounded-2xl border border-orange-100">
-                            <div>
-                                <p class="text-[9px] font-bold text-orange-600 uppercase">Horas 50%</p>
-                                <p class="text-xs font-bold text-orange-400">${formatoReloj(o.h50)}</p>
-                            </div>
-                            <p class="text-xl font-black text-orange-700">$${dinero50.toFixed(2)}</p>
-                        </div>
-
-                        <div class="flex justify-between items-center p-3 bg-red-50 rounded-2xl border border-red-100">
-                            <div>
-                                <p class="text-[9px] font-bold text-red-600 uppercase">Horas 100%</p>
-                                <p class="text-xs font-bold text-red-400">${formatoReloj(o.h100)}</p>
-                            </div>
-                            <p class="text-xl font-black text-red-700">$${dinero100.toFixed(2)}</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900 rounded-2xl p-4 text-center">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-widest text-blue-300">Total a Pagar Extras</p>
-                        <p class="text-3xl font-black text-green-400">$${totalDinero.toFixed(2)}</p>
+                    <div class="text-center border-l">
+                        <p class="text-[9px] font-bold text-blue-500 uppercase">Total Horas Extra</p>
+                        <p class="text-xl font-black text-blue-600">${formatoReloj(totalHorasExtra)}</p>
                     </div>
                 </div>
-            </div>`;
-        });
-        contenedor.innerHTML = html;
-    }
+
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center p-3 bg-orange-50 rounded-2xl border border-orange-100">
+                        <div>
+                            <p class="text-[9px] font-bold text-orange-600 uppercase">Horas 50%</p>
+                            <p class="text-xs font-bold text-orange-400">${formatoReloj(o.h50)}</p>
+                        </div>
+                        <p class="text-xl font-black text-orange-700">$${o.v50.toFixed(2)}</p>
+                    </div>
+
+                    <div class="flex justify-between items-center p-3 bg-red-50 rounded-2xl border border-red-100">
+                        <div>
+                            <p class="text-[9px] font-bold text-red-600 uppercase">Horas 100%</p>
+                            <p class="text-xs font-bold text-red-400">${formatoReloj(o.h100)}</p>
+                        </div>
+                        <p class="text-xl font-black text-red-700">$${o.v100.toFixed(2)}</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl p-4 text-center">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-widest text-blue-300">Total Acumulado Extras</p>
+                    <p class="text-3xl font-black text-green-400">$${totalDinero.toFixed(2)}</p>
+                </div>
+            </div>
+        </div>`;
+    });
+    contenedor.innerHTML = html;
+}
 </script>
 </body>
 </html>
