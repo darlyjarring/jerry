@@ -105,8 +105,9 @@
                 const o = data[oficial];
                 
                 // Totales combinados
-                const totalDineroExtra = (o.v50 || 0) + (o.v100 || 0);
+            
                 const totalHorasExtra = (o.h50 || 0) + (o.h100 || 0);
+                const totalDineroExtra = (o.v50 || 0) + (o.v100 || 0);
 
                 html += `
                 <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden card-oficial">
