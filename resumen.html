@@ -10,7 +10,8 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .card-excel { border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        .card-resumen { transition: all 0.3s ease; }
+        .card-resumen:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen pb-10">
@@ -19,7 +20,7 @@
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <i class="fas fa-file-invoice-dollar text-xl text-blue-300"></i>
-                <h1 class="text-lg font-black tracking-tighter uppercase">Desglose <span class="text-blue-300">Horas y Valores</span></h1>
+                <h1 class="text-lg font-black tracking-tighter uppercase">Desglose <span class="text-blue-300">General LogiApp</span></h1>
             </div>
             <a href="index.html" class="text-[10px] bg-blue-800 px-3 py-1 rounded-full font-bold hover:bg-blue-700 uppercase">
                 <i class="fas fa-arrow-left mr-1"></i> Volver
@@ -30,109 +31,196 @@
     <div class="max-w-5xl mx-auto p-4 space-y-6">
         
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h2 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Consulta de Registros</h2>
+            <h2 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest text-center md:text-left">Consulta de Registros y Carga</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="hidden" id="precioBase" value="2.50"> 
-                
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha Inicio</label>
-                    <input type="date" id="resIni" class="w-full p-3 bg-slate-50 border rounded-xl text-sm outline-none">
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase text-center md:text-left">Fecha Inicio</label>
+                    <input type="date" id="resIni" class="w-full p-3 bg-slate-50 border rounded-xl text-sm outline-none focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Fecha Fin</label>
-                    <input type="date" id="resFin" class="w-full p-3 bg-slate-50 border rounded-xl text-sm outline-none">
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase text-center md:text-left">Fecha Fin</label>
+                    <input type="date" id="resFin" class="w-full p-3 bg-slate-50 border rounded-xl text-sm outline-none focus:border-blue-500">
                 </div>
                 <div class="flex items-end">
                     <button onclick="generarResumen()" class="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95">
-                        <i class="fas fa-sync-alt mr-2"></i> CONSULTAR
+                        <i class="fas fa-sync-alt mr-2"></i> GENERAR REPORTE
                     </button>
                 </div>
             </div>
         </div>
 
+        <div id="accionesExport" class="hidden">
+            <button onclick="descargarExcelCompleto()" class="w-full bg-green-600 text-white font-black px-6 py-4 rounded-2xl hover:bg-green-700 shadow-md flex items-center justify-center transition-all">
+                <i class="fas fa-file-excel mr-2 text-xl"></i> DESCARGAR EXCEL CONSOLIDADO
+            </button>
+        </div>
+
         <div id="contenedorResumen" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="col-span-full text-center py-20">
+                <i class="fas fa-search text-slate-200 text-6xl mb-4"></i>
+                <p class="text-slate-400 font-bold uppercase text-xs tracking-widest">Selecciona un rango de fechas para comenzar</p>
             </div>
+        </div>
 
     </div>
 
     <script>
-    const APP_URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
-    
-    function formatoReloj(decimal) {
-        if (!decimal || decimal <= 0) return "0:00";
-        const horas = Math.floor(Math.abs(decimal));
-        const minutos = Math.round((Math.abs(decimal) - horas) * 60);
-        return `${horas}:${minutos.toString().padStart(2, '0')}`;
-    }
+        const APP_URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
+        let datosGlobales = null;
 
-    function generarResumen() {
-        const ini = document.getElementById('resIni').value;
-        const fin = document.getElementById('resFin').value;
-        if(!ini || !fin) return alert("Selecciona fechas");
+        function formatoReloj(decimal) {
+            if (!decimal || decimal <= 0) return "0:00";
+            const horas = Math.floor(Math.abs(decimal));
+            const minutos = Math.round((Math.abs(decimal) - horas) * 60);
+            return `${horas}:${minutos.toString().padStart(2, '0')}`;
+        }
 
-        document.getElementById('contenedorResumen').innerHTML = `<div class="col-span-full text-center py-20"><i class="fas fa-spinner animate-spin text-4xl text-blue-600"></i></div>`;
+        function generarResumen() {
+            const ini = document.getElementById('resIni').value;
+            const fin = document.getElementById('resFin').value;
+            if(!ini || !fin) return alert("Por favor, selecciona ambas fechas");
 
-        const callbackName = 'cb_resumen_full';
-        window[callbackName] = function(data) {
-            renderizar(data);
-            delete window[callbackName];
-        };
+            document.getElementById('contenedorResumen').innerHTML = `
+                <div class="col-span-full text-center py-20">
+                    <i class="fas fa-spinner animate-spin text-4xl text-blue-600 mb-4"></i>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Procesando base de datos...</p>
+                </div>`;
 
-        const script = document.createElement('script');
-        script.src = `${APP_URL}?action=getResumen&ini=${ini}&fin=${fin}&callback=${callbackName}`;
-        document.body.appendChild(script);
-    }
+            const callbackName = 'cb_resumen_full';
+            window[callbackName] = function(data) {
+                datosGlobales = data;
+                renderizar(data);
+                document.getElementById('accionesExport').classList.remove('hidden');
+                delete window[callbackName];
+            };
 
-    function renderizar(data) {
-    const contenedor = document.getElementById('contenedorResumen');
-    let html = '';
+            const script = document.createElement('script');
+            script.src = `${APP_URL}?action=getResumen&ini=${ini}&fin=${fin}&callback=${callbackName}`;
+            document.body.appendChild(script);
+        }
 
-    Object.keys(data).forEach(oficial => {
-        const o = data[oficial];
-        
-        // El total de dinero es la suma de los valores encontrados
-        const totalDineroExtra = o.v50 + o.v100;
+        function renderizar(data) {
+            const contenedor = document.getElementById('contenedorResumen');
+            let html = '';
 
-        html += `
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
-                <span class="font-black text-blue-900 uppercase text-sm">${oficial}</span>
-                <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full">${o.viajes} DÍAS</span>
-            </div>
+            Object.keys(data).forEach(oficial => {
+                const o = data[oficial];
+                
+                // --- LÓGICA DE VEHÍCULOS ---
+                let totalCargados = 0;
+                let cuentaTaura = 0;
+                let cuentaPlacas = 0;
+                const listaV = (o.listaVehiculos || "").split(/[,-]/); 
 
-            <div class="p-5 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="text-center">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase">Tiempo en Ruta</p>
-                        <p class="text-xl font-black text-slate-700">${formatoReloj(o.total)}</p>
+                listaV.forEach(item => {
+                    const v = item.trim().toUpperCase();
+                    if(!v) return;
+                    totalCargados++;
+                    v.includes('P') ? cuentaPlacas++ : cuentaTaura++;
+                });
+
+                // --- LÓGICA DE VALORES ---
+                const totalDineroExtra = o.v50 + o.v100;
+
+                html += `
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden card-resumen">
+                    <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
+                        <span class="font-black text-blue-900 uppercase text-sm">${oficial}</span>
+                        <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase">${o.viajes} Días</span>
                     </div>
-                    <div class="text-center border-l">
-                        <p class="text-[9px] font-bold text-blue-500 uppercase">Total Tiempo Extra</p>
-                        <p class="text-xl font-black text-blue-600">${formatoReloj(o.hExtra)}</p>
-                    </div>
-                </div>
 
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center p-3 bg-orange-50 rounded-2xl border border-orange-100">
-                        <p class="text-[9px] font-bold text-orange-600 uppercase">Valor Extras 50%</p>
-                        <p class="text-xl font-black text-orange-700">$${o.v50.toFixed(2)}</p>
-                    </div>
+                    <div class="p-5 space-y-4">
+                        
+                        <div class="bg-blue-900 rounded-2xl p-4 text-white shadow-inner">
+                            <div class="flex justify-between items-center mb-3">
+                                <p class="text-[9px] font-bold text-blue-300 uppercase tracking-widest">Control de Carga</p>
+                                <i class="fas fa-truck-moving text-blue-400"></i>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="text-center">
+                                    <p class="text-[8px] font-bold text-blue-400 uppercase">Total</p>
+                                    <p class="text-xl font-black">${totalCargados}</p>
+                                </div>
+                                <div class="text-center border-x border-blue-800">
+                                    <p class="text-[8px] font-bold text-blue-400 uppercase">Taura</p>
+                                    <p class="text-xl font-black">${cuentaTaura}</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-[8px] font-bold text-blue-400 uppercase">Placas</p>
+                                    <p class="text-xl font-black">${cuentaPlacas}</p>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="flex justify-between items-center p-3 bg-red-50 rounded-2xl border border-red-100">
-                        <p class="text-[9px] font-bold text-red-600 uppercase">Valor Extras 100%</p>
-                        <p class="text-xl font-black text-red-700">$${o.v100.toFixed(2)}</p>
-                    </div>
-                </div>
+                        <div class="grid grid-cols-2 gap-4 border-b border-slate-100 pb-4">
+                            <div class="text-center">
+                                <p class="text-[9px] font-bold text-slate-400 uppercase">Tiempo en Ruta</p>
+                                <p class="text-xl font-black text-slate-700">${formatoReloj(o.total)}</p>
+                            </div>
+                            <div class="text-center border-l border-slate-100">
+                                <p class="text-[9px] font-bold text-blue-500 uppercase">Total Extra (H)</p>
+                                <p class="text-xl font-black text-blue-600">${formatoReloj(o.hExtra)}</p>
+                            </div>
+                        </div>
 
-                <div class="bg-slate-900 rounded-2xl p-4 text-center">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-widest text-blue-300">Total Acumulado $</p>
-                    <p class="text-3xl font-black text-green-400">$${totalDineroExtra.toFixed(2)}</p>
-                </div>
-            </div>
-        </div>`;
-    });
-    contenedor.innerHTML = html;
-}
-</script>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center p-3 bg-orange-50 rounded-2xl border border-orange-100">
+                                <p class="text-[9px] font-bold text-orange-600 uppercase">Valor Extras 50%</p>
+                                <p class="text-xl font-black text-orange-700">$${o.v50.toFixed(2)}</p>
+                            </div>
+
+                            <div class="flex justify-between items-center p-3 bg-red-50 rounded-2xl border border-red-100">
+                                <p class="text-[9px] font-bold text-red-600 uppercase">Valor Extras 100%</p>
+                                <p class="text-xl font-black text-red-700">$${o.v100.toFixed(2)}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 rounded-2xl p-4 text-center">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-widest text-blue-300">Total Acumulado a Cobrar</p>
+                            <p class="text-3xl font-black text-green-400">$${totalDineroExtra.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            contenedor.innerHTML = html;
+        }
+
+        function descargarExcelCompleto() {
+            if (!datosGlobales) return;
+            const filas = [];
+            filas.push(["REPORTE CONSOLIDADO LOGIAPP GH"]);
+            filas.push(["PERIODO:", document.getElementById('resIni').value, "AL", document.getElementById('resFin').value]);
+            filas.push([]);
+            filas.push(["OFICIAL", "DÍAS", "T. EN RUTA", "T. EXTRA", "VEHÍCULOS", "TAURAS", "PLACAS", "VALOR 50%", "VALOR 100%", "TOTAL $"]);
+
+            Object.keys(datosGlobales).forEach(oficial => {
+                const o = datosGlobales[oficial];
+                
+                // Conteo para el Excel
+                let tC = 0, cT = 0, cP = 0;
+                const lista = (o.listaVehiculos || "").split(/[,-]/);
+                lista.forEach(i => {
+                    const v = i.trim().toUpperCase();
+                    if(v) { tC++; v.includes('P') ? cP++ : cT++; }
+                });
+
+                filas.push([
+                    oficial, 
+                    o.viajes, 
+                    formatoReloj(o.total), 
+                    formatoReloj(o.hExtra), 
+                    tC, cT, cP,
+                    o.v50.toFixed(2), 
+                    o.v100.toFixed(2), 
+                    (o.v50 + o.v100).toFixed(2)
+                ]);
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(filas);
+            XLSX.utils.book_append_sheet(wb, ws, "ResumenGeneral");
+            XLSX.writeFile(wb, `Resumen_LogiApp_${document.getElementById('resFin').value}.xlsx`);
+        }
+    </script>
 </body>
 </html>
