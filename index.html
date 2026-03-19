@@ -222,7 +222,16 @@
                 const eMin = Math.round((extraMs % 36e5) / 60000);
                 resta9Str = `${eHrs}:${eMin.toString().padStart(2, '0')}`;
             }
-
+// --- NUEVA LÓGICA DE CÁLCULO DE PAGO ---
+            const esDomingo = d1.getDay() === 0; // 0 es Domingo en JS
+            const precioHora = esDomingo ? 4 : 3;
+            
+            // Calculamos las horas extras (si son más de 9h de jornada)
+            const horasExtraDecimal = diffHrs > 9 ? (diffHrs - 9) : 0;
+            
+            // Calculamos el valor en dinero
+            const totalPagoExtras = (horasExtraDecimal * precioHora).toFixed(2);
+            // ---------------------------------------
             const payload = {
                 fechaIni: fmtFecha(f1),
                 horaIni: h1,
@@ -232,8 +241,10 @@
                 fullFin: `${fmtFecha(f2)} ${h2}`,
                 totalHrs: Math.floor(diffHrs) + ":" + Math.round((diffHrs % 1) * 60).toString().padStart(2, '0'),
                 resta9: resta9Str,
-                h50: d1.getDay() !== 0 && diffHrs > 9 ? (diffHrs - 9).toFixed(2) : "",
-                h100: d1.getDay() === 0 && diffHrs > 9 ? (diffHrs - 9).toFixed(2) : "",
+                //h50: d1.getDay() !== 0 && diffHrs > 9 ? (diffHrs - 9).toFixed(2) : "",
+               // h100: d1.getDay() === 0 && diffHrs > 9 ? (diffHrs - 9).toFixed(2) : "",
+                h50: !esDomingo && diffHrs > 9 ? totalPagoExtras : "", 
+                h100: esDomingo && diffHrs > 9 ? totalPagoExtras : "",
                 alimentacion: document.getElementById('alim').value || "0.00",
                 ruta: document.getElementById('ruta').value,
                 vehiculo: document.getElementById('veh').value,
