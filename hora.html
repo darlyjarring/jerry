@@ -26,7 +26,7 @@
                 <form id="formOficial" class="space-y-4">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase">Nombre Completo</label>
-                        <input type="text" id="nombreOficial" class="w-full p-3 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase" placeholder="EJ: MARIO CONTRERAS" required>
+                        <input type="text" id="nombreOficial" class="w-full p-3 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej: Juan Ramirez" required>
                     </div>
                     <button type="submit" id="btnSave" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-all">
                         <i class="fas fa-save mr-2"></i> GUARDAR EN HOJA "OFICIALES"
@@ -51,6 +51,13 @@
 
         window.onload = cargar;
 
+        // Función para convertir a formato Título (Primera letra mayúscula)
+        function formatNombre(str) {
+            return str.toLowerCase().split(' ').map(word => {
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }).join(' ');
+        }
+
         function cargar() {
             const callbackName = 'cb_' + Date.now();
             window[callbackName] = function(res) {
@@ -71,23 +78,25 @@
         document.getElementById('formOficial').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSave');
-            const nombre = document.getElementById('nombreOficial').value.toUpperCase();
+            
+            // Aplicamos el formato antes de enviar al servidor
+            const nombreRaw = document.getElementById('nombreOficial').value;
+            const nombreFormateado = formatNombre(nombreRaw);
             
             btn.disabled = true;
             btn.innerHTML = "GUARDANDO...";
 
-            // Enviamos un objeto que contiene 'nuevoOficial'
-            // El servidor detectará este campo y lo enviará a la hoja correcta.
             fetch(APP_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                body: JSON.stringify({ nuevoOficial: nombre })
+                body: JSON.stringify({ nuevoOficial: nombreFormateado })
             }).then(() => {
-                alert("Oficial guardado en la hoja OFICIALES");
+                alert("Oficial guardado como: " + nombreFormateado);
                 location.reload();
             }).catch(() => {
-                alert("Error");
+                alert("Error al conectar con el servidor");
                 btn.disabled = false;
+                btn.innerHTML = "GUARDAR EN HOJA 'OFICIALES'";
             });
         });
     </script>
