@@ -7,18 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body class="bg-slate-100 min-h-screen font-sans">
 
     <nav class="bg-white shadow-md sticky top-0 z-50 p-4">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-black text-blue-900 tracking-tighter cursor-pointer" onclick="window.location.href='index.html'">
-                LOGIAPP <span class="text-blue-600">GH</span>
-            </h1>
-            <div class="flex space-x-4">
-                <button onclick="window.location.href='index.html'" class="text-xs font-bold text-gray-500 hover:text-blue-900">
-                    <i class="fas fa-arrow-left mr-1"></i> VOLVER
-                </button>
-            </div>
+            <h1 class="text-xl font-black text-blue-900 tracking-tighter">LOGIAPP <span class="text-blue-600">GH</span></h1>
+            <button onclick="window.location.href='index.html'" class="text-xs font-bold text-gray-500 hover:text-blue-900">
+                <i class="fas fa-arrow-left mr-1"></i> VOLVER AL REGISTRO
+            </button>
         </div>
     </nav>
 
@@ -26,33 +22,24 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-600">
-                <h2 class="text-lg font-black text-slate-800 mb-4 uppercase flex items-center">
-                    <i class="fas fa-user-plus mr-2 text-blue-600"></i> Nuevo Oficial
-                </h2>
+                <h2 class="text-lg font-black text-slate-800 mb-4 uppercase">Nuevo Oficial</h2>
                 <form id="formOficial" class="space-y-4">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase">Nombre Completo</label>
-                        <input type="text" id="nombreOficial" class="w-full p-3 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej: Juan Pérez" required>
+                        <input type="text" id="nombreOficial" class="w-full p-3 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase" placeholder="EJ: MARIO CONTRERAS" required>
                     </div>
-                    <p class="text-[9px] text-orange-600 italic">Nota: Al no modificar el servidor, el registro se enviará a la hoja principal para su posterior validación.</p>
-                    <button type="submit" id="btnSave" class="w-full bg-blue-600 text-white font-black py-3 rounded-lg shadow hover:bg-blue-700 transition-all">
-                        GUARDAR OFICIAL
+                    <button type="submit" id="btnSave" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-all">
+                        <i class="fas fa-save mr-2"></i> GUARDAR EN HOJA "OFICIALES"
                     </button>
                 </form>
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-slate-800">
-                <h2 class="text-lg font-black text-slate-800 mb-4 uppercase flex items-center">
-                    <i class="fas fa-users mr-2 text-slate-600"></i> Oficiales Activos
+                <h2 class="text-lg font-black text-slate-800 mb-4 uppercase flex justify-between items-center">
+                    Lista Actual <span id="count" class="text-xs bg-slate-100 px-2 py-1 rounded">0</span>
                 </h2>
-                <div id="listaContenedor" class="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                    <div class="animate-pulse flex space-x-4">
-                        <div class="flex-1 space-y-4 py-1">
-                            <div class="h-4 bg-slate-200 rounded w-3/4"></div>
-                            <div class="h-4 bg-slate-200 rounded"></div>
-                            <div class="h-4 bg-slate-200 rounded w-5/6"></div>
-                        </div>
-                    </div>
+                <div id="listaContenedor" class="space-y-2 max-h-[400px] overflow-y-auto pr-2 text-sm font-bold text-slate-600">
+                    Cargando...
                 </div>
             </div>
 
@@ -62,68 +49,45 @@
     <script>
         const APP_URL = "https://script.google.com/macros/s/AKfycbzCIqGEMpJOsdNzypJ7qLU3OOZ6mxgJz7JNXXK0fICFs1NijEiW9NQoltetlL7wHawU/exec";
 
-        window.onload = cargarOficiales;
+        window.onload = cargar;
 
-        function cargarOficiales() {
-            const callbackName = 'callback_' + Math.round(Math.random() * 1000000);
+        function cargar() {
+            const callbackName = 'cb_' + Date.now();
             window[callbackName] = function(res) {
-                const contenedor = document.getElementById('listaContenedor');
-                if (res.oficiales && res.oficiales.length > 0) {
-                    contenedor.innerHTML = res.oficiales.map(o => `
-                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100 hover:bg-blue-50 transition-colors">
-                            <span class="text-sm font-bold text-slate-700">${o}</span>
-                            <i class="fas fa-check-circle text-green-500 text-xs"></i>
-                        </div>
-                    `).join('');
-                } else {
-                    contenedor.innerHTML = `<p class="text-xs text-gray-400 italic text-center">No se encontraron oficiales.</p>`;
-                }
+                document.getElementById('count').innerText = res.oficiales.length;
+                document.getElementById('listaContenedor').innerHTML = res.oficiales.map(o => `
+                    <div class="p-3 bg-slate-50 rounded border border-slate-100 flex justify-between">
+                        <span>${o}</span>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                `).join('');
                 delete window[callbackName];
             };
-
-            const script = document.createElement('script');
-            script.src = APP_URL + "?action=getData&callback=" + callbackName;
-            document.body.appendChild(script);
+            const s = document.createElement('script');
+            s.src = APP_URL + "?action=getData&callback=" + callbackName;
+            document.body.appendChild(s);
         }
 
         document.getElementById('formOficial').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSave');
-            const nombre = document.getElementById('nombreOficial').value;
-
+            const nombre = document.getElementById('nombreOficial').value.toUpperCase();
+            
             btn.disabled = true;
-            btn.innerHTML = "<i class='fas fa-spinner animate-spin'></i> PROCESANDO...";
+            btn.innerHTML = "GUARDANDO...";
 
-            // Reutilizamos el formato de doPost del servidor
-            const payload = {
-                fechaIni: new Date().toLocaleDateString('es-EC'),
-                horaIni: "NUEVO",
-                fechaFin: "OFICIAL",
-                horaFin: "",
-                fullIni: "",
-                fullFin: "",
-                totalHrs: "",
-                resta9: "",
-                h50: "",
-                h100: "",
-                alimentacion: "",
-                ruta: "ALTA SISTEMA",
-                vehiculo: "",
-                oficiales: nombre, // El nombre va en la columna de oficiales
-                observaciones: "Ingreso manual desde interfaz de oficiales"
-            };
-
+            // Enviamos un objeto que contiene 'nuevoOficial'
+            // El servidor detectará este campo y lo enviará a la hoja correcta.
             fetch(APP_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ nuevoOficial: nombre })
             }).then(() => {
-                alert("✓ Solicitud de ingreso enviada correctamente.");
+                alert("Oficial guardado en la hoja OFICIALES");
                 location.reload();
             }).catch(() => {
-                alert("Error de conexión");
+                alert("Error");
                 btn.disabled = false;
-                btn.innerText = "GUARDAR OFICIAL";
             });
         });
     </script>
