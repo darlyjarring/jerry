@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suscripción - LOGIAPP GH</title>
+    <!-- Iconos de Google para una apariencia profesional -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --azul-primario: #1d4ed8; /* El azul fuerte de LOGIAPP GH */
+            --azul-oscuro: #1e3a8a;
+            --gris-fondo: #f1f5f9;
+            --gris-texto: #475569;
+            --verde-exito: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--gris-fondo);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navbar consistente con la imagen image_e995c6.png */
+        .navbar {
+            background-color: #ffffff;
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .brand {
+            font-weight: bold;
+            font-size: 24px;
+            color: var(--azul-oscuro);
+        }
+
+        .brand span {
+            color: var(--azul-primario);
+        }
+
+        /* Contenedor Principal */
+        .main-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .pay-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 500px;
+            overflow: hidden;
+            border-top: 5px solid var(--azul-primario);
+        }
+
+        .card-header {
+            text-align: center;
+            padding: 30px 20px 20px 20px;
+            background: linear-gradient(to bottom, #ffffff, #f8fafc);
+        }
+
+        .card-header h1 {
+            color: var(--azul-oscuro);
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .card-header p {
+            color: var(--gris-texto);
+            font-size: 14px;
+        }
+
+        /* Contenedor del Precio */
+        .price-tag {
+            background-color: #eff6ff;
+            border: 2px dashed var(--azul-primario);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+        }
+
+        .price-amount {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--azul-oscuro);
+        }
+
+        .price-period {
+            font-size: 16px;
+            color: var(--gris-texto);
+            font-weight: 500;
+        }
+
+        /* Formulario */
+        .pay-form {
+            padding: 0 30px 30px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gris-texto);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper .material-icons {
+            position: absolute;
+            left: 12px;
+            color: #94a3b8;
+            font-size: 20px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--azul-primario);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+        }
+
+        /* Fila para vencimiento y CVC */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-row .form-control {
+            padding-left: 15px; /* Quitar espacio de icono en campos cortos */
+        }
+
+        /* Botón de Pago */
+        .btn-pay {
+            width: 100%;
+            background-color: var(--azul-primario);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-pay:hover {
+            background-color: var(--azul-oscuro);
+        }
+
+        /* Nota de Seguridad */
+        .security-note {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .security-note .material-icons {
+            font-size: 16px;
+            color: var(--verde-exito);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar simulado de tu plataforma -->
+    <nav class="navbar">
+        <div class="brand">LOGIAPP <span>GH</span></div>
+    </nav>
+
+    <!-- Contenedor del Formulario de Pago -->
+    <div class="main-container">
+        <div class="pay-card">
+            
+            <div class="card-header">
+                <h1>Renueva tu Acceso</h1>
+                <p>Tu suscripción ha expirado o necesitas activarla para continuar gestionando tus historiales y rutas de manera eficiente.</p>
+            </div>
+
+            <!-- Información del Plan -->
+            <div class="price-tag">
+                <div class="price-amount">$10.00</div>
+                <div class="price-period">Acceso Completo por 6 Meses</div>
+            </div>
+
+            <!-- Formulario de Pago -->
+            <form class="pay-form" id="subscription-form" onsubmit="procesarPago(event)">
+                
+                <div class="form-group">
+                    <label for="card-holder">Nombre en la tarjeta</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons">person</span>
+                        <input type="text" id="card-holder" class="form-control" placeholder="Juan Pérez" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="card-number">Número de tarjeta</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons">credit_card</span>
+                        <input type="text" id="card-number" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="card-expiry">Vencimiento</label>
+                        <input type="text" id="card-expiry" class="form-control" placeholder="MM/AA" maxlength="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="card-cvc">CVC</label>
+                        <input type="text" id="card-cvc" class="form-control" placeholder="123" maxlength="4" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-pay">
+                    <span class="material-icons">lock</span>
+                    Pagar $10.00 Ahora
+                </button>
+
+                <div class="security-note">
+                    <span class="material-icons">verified_user</span>
+                    Pago 100% seguro y encriptado.
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Función de simulación para cuando el usuario presione pagar
+        function procesarPago(event) {
+            event.preventDefault();
+            
+            const boton = document.querySelector('.btn-pay');
+            boton.innerHTML = 'Procesando...';
+            boton.disabled = true;
+
+            // Simulación de respuesta de pasarela de pago (Stripe, Kushki, Payphone, etc.)
+            setTimeout(() => {
+                alert('¡Pago procesado con éxito! Tu cuenta de LOGIAPP GH ha sido renovada por 6 meses.');
+                // Aquí rediriges al usuario de vuelta al Historial de la app
+                window.location.reload(); 
+            }, 2000);
+        }
+
+        // Formateador básico para el número de tarjeta (agrega espacios automáticamente)
+        document.getElementById('card-number').addEventListener('input', function (e) {
+            e.target.value = e.target.value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim();
+        });
+
+        // Formateador básico para la fecha de expiración
+        document.getElementById('card-expiry').addEventListener('input', function (e) {
+            let val = e.target.value.replace(/[^\d]/g, '');
+            if (val.length >= 2) {
+                val = val.slice(0, 2) + '/' + val.slice(2, 4);
+            }
+            e.target.value = val;
+        });
+    </script>
+</body>
+</html>
